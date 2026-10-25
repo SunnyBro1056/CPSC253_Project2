@@ -104,7 +104,11 @@ def get_location_gui() -> str:
     root.destroy()
 
     if not location:
-        print("No location selected. Stopping program..")
+        print("No file selected. Stopping program..")
+        sys.exit(1)
+
+    if not location.endswith('.txt'):
+        print("Invalid file selected. This program only officially runs with '.txt' files.")
         sys.exit(1)
 
     return location
@@ -122,6 +126,9 @@ def get_savefileas_gui():
     if not location:
         print("No location selected. Stopping program..")
         sys.exit(1)
+
+    if not location.endswith('.txt'):
+        location = location + '.txt'
 
     return location
 
