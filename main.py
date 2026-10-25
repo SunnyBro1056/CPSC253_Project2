@@ -1,41 +1,55 @@
 import base64
+import sys
+from tkinter import Tk, filedialog
 from encryptor import Encryptor
 from decryptor import Decryptor
 
 def main():
-
+    DIVIDER = f"{'-' * 8}"
     # User will choose '1' for encryption or '2' for decryption
     user_choice = startup_sequence()
 
     # ENCRYPTION
     if user_choice == 1:
         encryptor = Encryptor()
-        print("Encryptor engine started..\n")
-        text_input = input("Input text to be encrypted..\n")
+        print("Encryptor engine started..\n\nPlease use the GUI to choose your plaintext file to encrypt..")
 
-        ciphertext = encryptor.encrypt_text(text_input)
-        print(f"\n\nHere is your ciphertext. Your original string was '{text_input}' and it was turned into '{ciphertext}'")
+        plaintext_file = get_location_gui()
+        with open(plaintext_file, "r") as f:
+            plaintext = f.read()
+
+        ciphertext = encryptor.encrypt_text(plaintext)
+        print(f"\n\nEncryption succeeded! Your original string was: \n\n{DIVIDER}\n{plaintext}\n{DIVIDER}\n\nand it was turned into: \n\n{DIVIDER}\n{ciphertext}\n{DIVIDER}\n\n")
 
         # Base64 is used to encode the raw ciphertext so that it can safely be 
         # written to a UTF-8 text file. This does not do any extra encryption work; 
         # I was just getting errors trying to write my ciphertext to a file and found
         # out why.
         safe_text = base64.b64encode(ciphertext.encode('utf-16')).decode('utf-8')
-        with open("encrypted.txt", "w") as f:
+
+        _ = input("Your encrypted file is ready to save. Please enter any value into the terminal to start the GUI:\n> ")
+        encrypted_text_location = get_savefileas_gui()
+        with open(encrypted_text_location, "w") as f:
             _ = f.write(safe_text)
 
     # DECRYPTION 
     elif user_choice == 2: 
         decryptor = Decryptor()
 
-        with open("encrypted.txt", "r") as f:
-            raw_text = f.read()
+        print("Decryptor engine started.. \n\nPlease use the GUI to choose your encrypted file to decrypt..")
 
+        raw_text_file = get_location_gui()
+        with open(raw_text_file, "r") as f:
+            raw_text = f.read()
         ciphertext = base64.b64decode(raw_text).decode('utf-16')
 
         original_text = decryptor.decrypt_text(ciphertext)
-        print(f"Your original text was '{original_text}'") 
-        #decryptor
+        print(f"\n\nDecryption succeeded! Your ciphertext was: \n\n{DIVIDER}\n{ciphertext}\n{DIVIDER}\n\nand its original string was: \n\n{DIVIDER}\n{original_text}\n{DIVIDER}\n\n")
+        _ = input("Your decrypted file is ready to save. Please enter any value into the terminal to start the GUI:\n> ")
+
+        decrypted_text_location = get_savefileas_gui()
+        with open(decrypted_text_location, "w") as f:
+            _ = f.write(original_text)
 
 
 ####################################
@@ -75,6 +89,41 @@ def validate_input(text: str) -> bool:
     except ValueError:
         print(ERROR_MESSAGE)
         return False
+
+
+##########################
+# FILESYSTEM GUI METHODS #
+##########################
+
+
+def get_location_gui() -> str:
+    """This method is for selecting files that the program will use."""
+    root = Tk()
+    root.withdraw()
+    location = filedialog.askopenfilename()
+    root.destroy()
+
+    if not location:
+        print("No location selected. Stopping program..")
+        sys.exit(1)
+
+    return location
+
+
+def get_savefileas_gui():
+    """This method is for selecting a location to save files that the program has produced."""
+    root = Tk()
+    root.withdraw()
+    location = filedialog.asksaveasfilename(
+        title="Choose where to save the file",
+        defaultextension=".txt")  
+    root.destroy()
+
+    if not location:
+        print("No location selected. Stopping program..")
+        sys.exit(1)
+
+    return location
 
 
 main()
