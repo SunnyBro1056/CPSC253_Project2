@@ -54,7 +54,7 @@ def main():
         try:
             ciphertext = base64.b64decode(raw_text).decode('utf-16')
         except binascii.Error:
-            print('You are trying to decrypt a plaintext file! That will not work. Please use a file encrypted with SuEncryptor.')
+            print('You are trying to decrypt a plaintext file! That will not work. Please use a file encrypted with SuCryptor.')
             sys.exit(1)
 
         original_text = decryptor.decrypt_text(ciphertext)
@@ -77,7 +77,7 @@ def startup_sequence() -> int:
     or '2' for decryption."""
 
     # Startup CLI text-sequence
-    print(f"{"/"*6}* Welcome to the SuEncryptor Program. Please choose what you would like to do *{"/"*6}\n")
+    print(f"{"/"*6}* Welcome to the SuCryptor Program. Please choose what you would like to do *{"/"*6}\n")
     print("1) Encrypt a text file\n2) Decrypt a text file\n\n")
 
     # Receive user input: encryption or decryption
