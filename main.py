@@ -19,7 +19,7 @@ def main():
 
         plaintext_file = get_location_gui()
         with open(plaintext_file, "r") as f:
-            plaintext = f.read()
+            plaintext = f.read().rstrip('\n')
 
         ciphertext = encryptor.encrypt_text(plaintext)
         print(f"\n\nEncryption succeeded! Your original string was: \n\n{DIVIDER}\n{plaintext}\n{DIVIDER}\n\nand it was turned into: \n\n{DIVIDER}\n{ciphertext}\n{DIVIDER}\n\n")
@@ -48,7 +48,7 @@ def main():
 
         raw_text_file = get_location_gui()
         with open(raw_text_file, "r") as f:
-            raw_text = f.read()
+            raw_text = f.read().rstrip('\n')
 
         # Wrapping this in a try/except block since program crashes when trying to decrypt plaintext
         try:
@@ -160,6 +160,7 @@ class Encryptor():
     def encrypt_text(self, text: str):
         # See methods defined below for implementation details
         key = len(text) + 4 # The choice of '4' here is arbitrary.
+        print(key)
         text = self.transpose_text(text)
         text = self.shift_text(text, key)
         text = self.reverse_text(text)
@@ -184,7 +185,7 @@ class Encryptor():
     def shift_text(self, text: str, shift_key: int) -> str: 
         """This function shifts the UNICODE values of each character by
         a predetermined shift key. The string 'CDAB' is transformed to 
-        string 'STQR'. Note that since these are UNICODE values, this 
+        string 'KLIJ'. Note that since these are UNICODE values, this 
         transformation is case-sensitive."""
 
         max_value = 0x110000 # 1 value greater than the maximum UNICODE val: 0x10FFFF
@@ -196,7 +197,7 @@ class Encryptor():
 
     def reverse_text(self, text: str) -> str:
         """This function simply reverses the string. This is another layer of 
-        transposition. The string 'STQR' becomes 'RQTS'."""
+        transposition. The string 'KLIJ' becomes 'JILK'."""
         return text[::-1]
 
 
@@ -274,4 +275,7 @@ class Decryptor():
         original_text = original_first_half + original_second_half + remainder
         return original_text
 
-main()
+try:
+    main()
+except KeyboardInterrupt:
+    print("\nKeyboardInterrupt detected! Goodbye!\n")
