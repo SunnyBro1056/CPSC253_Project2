@@ -1,15 +1,18 @@
 import base64
+import binascii
 import sys
 from tkinter import Tk, filedialog
-from encryptor import Encryptor
-from decryptor import Decryptor
 
 def main():
     DIVIDER = f"{'-' * 8}"
+
     # User will choose '1' for encryption or '2' for decryption
     user_choice = startup_sequence()
 
-    # ENCRYPTION
+    ###########################
+    # ENCRYPTION CLI DIALOGUE #
+    ###########################
+
     if user_choice == 1:
         encryptor = Encryptor()
         print("Encryptor engine started..\n\nPlease use the GUI to choose your plaintext file to encrypt..")
@@ -32,7 +35,12 @@ def main():
         with open(encrypted_text_location, "w") as f:
             _ = f.write(safe_text)
 
-    # DECRYPTION 
+
+    ###########################
+    # DECRYPTION CLI DIALOGUE #
+    ###########################
+
+
     elif user_choice == 2: 
         decryptor = Decryptor()
 
@@ -41,7 +49,13 @@ def main():
         raw_text_file = get_location_gui()
         with open(raw_text_file, "r") as f:
             raw_text = f.read()
-        ciphertext = base64.b64decode(raw_text).decode('utf-16')
+
+        # Wrapping this in a try/except block since program crashes when trying to decrypt plaintext
+        try:
+            ciphertext = base64.b64decode(raw_text).decode('utf-16')
+        except binascii.Error:
+            print('You are trying to decrypt a plaintext file! That will not work. Please use a file encrypted with SuEncryptor.')
+            sys.exit(1)
 
         original_text = decryptor.decrypt_text(ciphertext)
         print(f"\n\nDecryption succeeded! Your ciphertext was: \n\n{DIVIDER}\n{ciphertext}\n{DIVIDER}\n\nand its original string was: \n\n{DIVIDER}\n{original_text}\n{DIVIDER}\n\n")
@@ -132,5 +146,132 @@ def get_savefileas_gui():
 
     return location
 
+
+############################
+# 4-STEP ENCRYPTION METHOD #
+############################
+# Docstrings will lead through an example encryption of the string "ABCD"
+
+
+class Encryptor():
+    def __init__(self):
+        pass
+    
+    def encrypt_text(self, text: str):
+        # See methods defined below for implementation details
+        key = len(text) + 4 # The choice of '4' here is arbitrary.
+        text = self.transpose_text(text)
+        text = self.shift_text(text, key)
+        text = self.reverse_text(text)
+        text = self.xor_text(text, key)
+        return(text)
+
+
+    def transpose_text(self, text: str) -> str:
+        """This function transposes text by calculating half of its length, then 
+        shifting the first half and second half. For example: 'ABCD' 
+        becomes 'CDAB'. In the case of odd strings, the remaining character
+        is tagged onto the end: 'ABCDE' becomes 'CDABE'."""    
+
+        transpose_val = len(text) // 2
+        first_half = text[:transpose_val]
+        second_half = text[transpose_val: transpose_val * 2]
+        new_text = second_half + first_half + text[transpose_val * 2:]
+
+        return new_text
+
+
+    def shift_text(self, text: str, shift_key: int) -> str: 
+        """This function shifts the UNICODE values of each character by
+        a predetermined shift key. The string 'CDAB' is transformed to 
+        string 'STQR'. Note that since these are UNICODE values, this 
+        transformation is case-sensitive."""
+
+        max_value = 0x110000 # 1 value greater than the maximum UNICODE val: 0x10FFFF
+        return ''.join(
+            chr((ord(char) + shift_key) % max_value)
+                for char in text
+        )
+
+
+    def reverse_text(self, text: str) -> str:
+        """This function simply reverses the string. This is another layer of 
+        transposition. The string 'STQR' becomes 'RQTS'."""
+        return text[::-1]
+
+
+    def xor_text(self, text: str, key: int) -> str:
+        """This function uses the built-in Python XOR bitwise operator
+        on each character in the string to add another layer of encryption.
+        This is easily reversible in decryption, since using the same key
+        will reverse it. The string 'RQTS' becomes 'BADC' """
+        return ''.join(
+            chr(ord(char) ^ key)
+            for char in text
+        )
+
+
+############################
+# 4-STEP DECRYPTION METHOD #
+############################
+# Docstrings will lead through an example decryption of the string "BADC"
+
+
+class Decryptor():
+    def __init__(self):
+        pass
+    
+    def decrypt_text(self, text: str):
+        key = len(text) + 4 # Arbitrary key; same as encryption algorithm
+
+        # Steps to decrypt are the opposite order of encryption
+        text = self.unxor_text(text, key)
+        text = self.unreverse_text(text)
+        text = self.unshift_text(text, key)
+        text = self.untranspose_text(text)
+
+        return text
+
+
+    def unxor_text(self, text: str, key: int) -> str:
+        """This is a perfect example of how using the same key twice with
+        an XOR undoes the encryption. Our string 'BADC' is decrypted to 
+        'RQTS' using the same exact logic as encryption"""
+        return ''.join(
+            chr(ord(char) ^ key)
+            for char in text
+        )
+
+    def unreverse_text(self, text: str) -> str:
+        """This is the same logic as encryption; reversing our 
+        reversed text will give us the original back.
+        Our string 'RQTS' becomes 'STQR'"""
+        return text[::-1]
+
+ 
+    def unshift_text(self, text: str, shift_key: int) -> str:
+        """Here we use the same logic with UNICODE values but instead of adding our key, we 
+        subtract our key to get the original UNICODE values. Our string 'STQR' becomes
+        'CDAB'"""
+        max_value = 0x110000
+        return ''.join(
+            chr((ord(char) - shift_key) % max_value)
+                for char in text
+        )
+
+  
+    def untranspose_text(self, text: str) -> str:
+        """This function reverses the transposition by the encryption algorithm.
+        We can use the same underlying math in reverse order, and if a string was
+        odd, the last remaining character never changed.
+        Our string 'CDAB' becomes 'ABCD'"""
+        transpose_val = len(text) // 2
+
+        original_second_half = text[:transpose_val]
+        original_first_half = text[transpose_val: transpose_val * 2]
+        remainder = text[transpose_val * 2:]
+
+        original_text = original_first_half + original_second_half + remainder
+        return original_text
 
 main()
